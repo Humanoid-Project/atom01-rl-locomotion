@@ -170,7 +170,6 @@ class EventCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            # init_state로 초기화
             "pose_range": {},
             "velocity_range": {},
         },
@@ -239,25 +238,33 @@ class RewardsCfg:
     """Reward terms for the MDP."""
 
     # 매 step마다 살아있으면 보상
-    alive = RewTerm(func=mdp.is_alive, weight=1.0)
+    alive = RewTerm(
+        func=mdp.is_alive,
+        weight=0.15
+    )
 
     # 쓰러져서 에피소드 끝나면 페널티
     terminating = RewTerm(
         func=mdp.is_terminated,
-        weight=-2.0
+        weight=-20.0
     )
 
     # 다리 관절이 빠르게 움직이면 페널티
     leg_joint_vel = RewTerm(
         func=mdp.joint_vel_l1,
         weight=-0.01,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=LEG_JOINTS)},
+        params={
+            "asset_cfg": SceneEntityCfg(
+                "robot",
+                joint_names=LEG_JOINTS
+            )
+        },
     )
 
     # 몸통 기울기 페널티
     flat_orientation = RewTerm(
         func=mdp.flat_orientation_l2,
-        weight=-2.0,
+        weight=-5.0,
     )
 
     # 몸통 흔들림 속도 페널티
@@ -266,13 +273,25 @@ class RewardsCfg:
         weight=-0.5,
     )
 
+    # 로봇 높이 페널티
+    base_height = RewTerm(
+        func=mdp.base_height_l2,
+        weight=-10.0,
+        params={
+            "target_height": 0.72,
+        },
+    )
+
     # 왼발이 땅에 닿지 않으면 페널티
     left_foot_contact = RewTerm(
         func=mdp.desired_contacts,
         weight=-1.0,
         params={
-            "sensor_cfg":SceneEntityCfg("contact_forces",body_names=["left_ankle_roll_link"]),
-            "threshold":1.0,
+            "sensor_cfg": SceneEntityCfg(
+                "contact_forces",
+                body_names=["left_ankle_roll_link"],
+            ),
+            "threshold": 5.0,
         },
     )
     # 오른발이 땅에 닿지 않으면 페널티
@@ -280,16 +299,30 @@ class RewardsCfg:
         func=mdp.desired_contacts,
         weight=-1.0,
         params={
-            "sensor_cfg":SceneEntityCfg("contact_forces",body_names=["right_ankle_roll_link"]),
-            "threshold":1.0,
+            "sensor_cfg": SceneEntityCfg(
+                "contact_forces",
+                body_names=["right_ankle_roll_link"],
+            ),
+            "threshold": 5.0,
         },
     )
     
     # 다리 관절이 기본자세에서 벗어나면 페널티
     joint_deviation = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-0.5,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=LEG_JOINTS)},
+        weight=-1.0,
+        params={
+            "asset_cfg": SceneEntityCfg(
+                "robot",
+                joint_names=LEG_JOINTS,
+            ),
+        },
+    )
+
+    # 지난번이랑 너무 다른 action을 내면 페널티
+    action_rate = RewTerm(
+        func=mdp.action_rate_l2,
+        weight=-0.01,
     )
 
 
@@ -326,7 +359,7 @@ class RobonexTrainEnvCfg(ManagerBasedRLEnvCfg):
         """Post initialization."""
 
         self.decimation = 2
-        self.episode_length_s = 5
+        self.episode_length_s = 15
 
         self.viewer.eye = (8.0, 0.0, 5.0)
 
