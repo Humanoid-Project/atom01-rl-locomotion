@@ -138,8 +138,17 @@ class ObservationsCfg:
     class PolicyCfg(ObsGroup):
         """Observations for policy group."""
 
-        joint_pos_rel = ObsTerm(func=mdp.joint_pos_rel) # 각 관절이 기본 자세에서 얼마나 틀어져 있는지
-        joint_vel_rel = ObsTerm(func=mdp.joint_vel_rel) # 각 관절이 얼마나 빠르게 움직이고 있는지
+        # 각 관절이 기본 자세에서 얼마나 틀어져 있는지
+        joint_pos_rel = ObsTerm(
+            func=mdp.joint_pos_rel,
+            noise=GaussianNoiseCfg(mean=0.0, std=0.01),
+        )
+
+        # 각 관절이 얼마나 빠르게 움직이고 있는지
+        joint_vel_rel = ObsTerm(
+            func=mdp.joint_vel_rel,
+            noise=GaussianNoiseCfg(mean=0.0, std=0.1),
+        )
 
         base_pos_z = ObsTerm(func=mdp.base_pos_z) # 로봇 허리의 높이
 
@@ -155,7 +164,7 @@ class ObservationsCfg:
         projected_gravity = ObsTerm(func=mdp.projected_gravity)
 
         def __post_init__(self) -> None:
-            self.enable_corruption = False # 노이즈 적용 여부
+            self.enable_corruption = True # 노이즈 적용 여부
             self.concatenate_terms = True
 
     policy: PolicyCfg = PolicyCfg()
@@ -180,8 +189,8 @@ class EventCfg:
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=LEG_JOINTS),
-            "position_range": (0.0, 0.0),
-            "velocity_range": (0.0, 0.0),
+            "position_range": (-0.05, 0.05),
+            "velocity_range": (-0.1, 0.1), # 보통 position_range의 2배
         },
     )
     # 몸통 회전 joint 초기화
@@ -202,8 +211,9 @@ class EventCfg:
         interval_range_s=(3.0,5.0), # 3~5초마다 1번씩
         params={
             "velocity_range":{
-                "x":(-0.3, 0.3),
-                "y":(-0.3, 0.3),
+                "x": (-0.3, 0.3),
+                "y": (-0.3, 0.3),
+                "yaw": (-0.5, 0.5),
             },
         },
     )
@@ -240,13 +250,13 @@ class RewardsCfg:
     # 매 step마다 살아있으면 보상
     alive = RewTerm(
         func=mdp.is_alive,
-        weight=0.15
+        weight=1.0
     )
 
     # 쓰러져서 에피소드 끝나면 페널티
     terminating = RewTerm(
         func=mdp.is_terminated,
-        weight=-20.0
+        weight=-5.0
     )
 
     # 다리 관절이 빠르게 움직이면 페널티
