@@ -124,7 +124,13 @@ class ActionsCfg:
     joint_pos = mdp.JointPositionActionCfg(
         asset_name="robot",
         joint_names=LEG_JOINTS,
-        scale=0.5,
+        scale={
+            ".*yaw.*": 0.08,
+            ".*roll.*": 0.08,
+            ".*thigh_pitch.*": 0.20,
+            ".*knee.*": 0.25,
+            ".*ankle_pitch.*": 0.15,
+        },
         use_default_offset=True, # 절대 관절각이 아닌 기본 자세에서의 변화량 사용
     )
 
@@ -133,25 +139,24 @@ class ActionsCfg:
 class ObservationsCfg:
     """Observation specifications for the MDP."""
 
-    # 관측할 값 정의
+    # 관측할 값 정의 (실제 로봇으로부터 받을 값)
     @configclass
     class PolicyCfg(ObsGroup):
         """Observations for policy group."""
 
-        # 각 관절이 기본 자세에서 얼마나 틀어져 있는지
+        # 관절 각도
         joint_pos_rel = ObsTerm(
             func=mdp.joint_pos_rel,
             noise=GaussianNoiseCfg(mean=0.0, std=0.01),
         )
 
-        # 각 관절이 얼마나 빠르게 움직이고 있는지
+        # 관절 속도
         joint_vel_rel = ObsTerm(
             func=mdp.joint_vel_rel,
-            noise=GaussianNoiseCfg(mean=0.0, std=0.1),
+            noise=GaussianNoiseCfg(mean=0.0, std=0.0),
         )
 
-        base_pos_z = ObsTerm(func=mdp.base_pos_z) # 로봇 허리의 높이
-
+        # IMU 각속도
         imu_ang_vel = ObsTerm(
             func=mdp.imu_ang_vel,
             params={"asset_cfg": SceneEntityCfg("imu")},
@@ -161,7 +166,11 @@ class ObservationsCfg:
             ),
         )
 
+        # 중력 방향
         projected_gravity = ObsTerm(func=mdp.projected_gravity)
+
+        # 이전 Action
+        actions = ObsTerm(func=mdp.last_action)
 
         def __post_init__(self) -> None:
             self.enable_corruption = True # 노이즈 적용 여부
@@ -173,6 +182,18 @@ class ObservationsCfg:
 @configclass
 class EventCfg:
     """Configuration for events."""
+
+    # 엑추에이터 gain 
+    randomize_actuator_gains = EventTerm(
+        func=mdp.randomize_actuator_gains,
+        mode="reset",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
+            "stiffness_distribution_params": (0.8, 1.2),
+            "damping_distribution_params": (0.8, 1.2),
+            "operation": "scale",
+        },
+    )
 
     # base_link 초기화
     reset_base = EventTerm(
@@ -189,8 +210,8 @@ class EventCfg:
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=LEG_JOINTS),
-            "position_range": (-0.05, 0.05),
-            "velocity_range": (-0.1, 0.1), # 보통 position_range의 2배
+            "position_range": (-0.02, 0.02),
+            "velocity_range": (-0.02, 0.02),
         },
     )
     # 몸통 회전 joint 초기화
@@ -199,44 +220,57 @@ class EventCfg:
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=["torso_joint"]),
-            "position_range": (0.0, 0.0),
-            "velocity_range": (0.0, 0.0),
+            "position_range": (-0.02, 0.02),
+            "velocity_range": (-0.02, 0.02),
         },
     )
-
+    
     # 외부 충격
     push_robot = EventTerm(
         func=mdp.push_by_setting_velocity,
         mode="interval",
-        interval_range_s=(3.0,5.0), # 3~5초마다 1번씩
+        interval_range_s=(5.0,8.0),
         params={
             "velocity_range":{
-                "x": (-0.3, 0.3),
-                "y": (-0.3, 0.3),
-                "yaw": (-0.5, 0.5),
+                "x": (-0.1, 0.1),
+                "y": (-0.1, 0.1),
+                #"yaw": (-0.5, 0.5),
             },
         },
     )
-
+    
     # 마찰 랜덤화
     randomize_friction = EventTerm(
         func=mdp.randomize_rigid_body_material,
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot"),
-            "static_friction_range": (0.3, 1.2),
-            "dynamic_friction_range": (0.2, 1.0), # 0.0이면 미끄러운 바닥
-            "restitution_range": (0.0, 0.1),
+            "static_friction_range": (0.8, 1.2),
+            "dynamic_friction_range": (0.6, 1.0), # 0.0이면 미끄러운 바닥
+            "restitution_range": (0.0, 0.0),
             "num_buckets": 64,
         },
     )
+    '''
+    # 관절 마찰 랜덤화
+    randomize_joint_friction = EventTerm(
+        func=mdp.randomize_joint_parameters,
+        mode="reset",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=LEG_JOINTS),
+            "friction_distribution_params": (0.0, 0.02),
+            "operation": "add",
+            "distribution": "uniform",
+        },
+    )
+    '''
     # 질량 랜덤화
     randomize_mass = EventTerm(
         func=mdp.randomize_rigid_body_mass,
         mode="reset",
         params={
-            "asset_cfg": SceneEntityCfg("robot"),
-            "mass_distribution_params": (-0.5, 0.5), # ±0.5kg
+            "asset_cfg": SceneEntityCfg("robot", body_names=["base_link", "torso_link"]),
+            "mass_distribution_params": (-0.3, 0.3),
             "operation": "add",
         },
     )
@@ -259,68 +293,37 @@ class RewardsCfg:
         weight=-5.0
     )
 
-    # 다리 관절이 빠르게 움직이면 페널티
-    leg_joint_vel = RewTerm(
-        func=mdp.joint_vel_l1,
-        weight=-0.01,
-        params={
-            "asset_cfg": SceneEntityCfg(
-                "robot",
-                joint_names=LEG_JOINTS
-            )
-        },
-    )
-
     # 몸통 기울기 페널티
     flat_orientation = RewTerm(
         func=mdp.flat_orientation_l2,
-        weight=-5.0,
+        weight=-1.0,
     )
 
-    # 몸통 흔들림 속도 페널티
-    ang_vel_xy = RewTerm(
-        func=mdp.ang_vel_xy_l2,
+    # 수직 방향 흔들림 억제
+    lin_vel_z = RewTerm(
+        func=mdp.lin_vel_z_l2,
         weight=-0.5,
+    )
+
+    # yaw 회전 억제
+    ang_vel_z = RewTerm(
+        func=mdp.ang_vel_z_l2,
+        weight=-0.3,
     )
 
     # 로봇 높이 페널티
     base_height = RewTerm(
         func=mdp.base_height_l2,
-        weight=-10.0,
+        weight=-2.0,
         params={
             "target_height": 0.72,
-        },
-    )
-
-    # 왼발이 땅에 닿지 않으면 페널티
-    left_foot_contact = RewTerm(
-        func=mdp.desired_contacts,
-        weight=-1.0,
-        params={
-            "sensor_cfg": SceneEntityCfg(
-                "contact_forces",
-                body_names=["left_ankle_roll_link"],
-            ),
-            "threshold": 5.0,
-        },
-    )
-    # 오른발이 땅에 닿지 않으면 페널티
-    right_foot_contact = RewTerm(
-        func=mdp.desired_contacts,
-        weight=-1.0,
-        params={
-            "sensor_cfg": SceneEntityCfg(
-                "contact_forces",
-                body_names=["right_ankle_roll_link"],
-            ),
-            "threshold": 5.0,
         },
     )
     
     # 다리 관절이 기본자세에서 벗어나면 페널티
     joint_deviation = RewTerm(
         func=mdp.joint_deviation_l1,
-        weight=-1.0,
+        weight=-0.3,
         params={
             "asset_cfg": SceneEntityCfg(
                 "robot",
@@ -329,10 +332,29 @@ class RewardsCfg:
         },
     )
 
+    # 관절 토크 억제
+    dof_torques = RewTerm(
+        func=mdp.joint_torques_l2,
+        weight=-1.0e-5,
+    )
+
     # 지난번이랑 너무 다른 action을 내면 페널티
     action_rate = RewTerm(
         func=mdp.action_rate_l2,
         weight=-0.01,
+    )
+
+    feet_width = RewTerm(
+        func=mdp.feet_width_l2,
+        weight=-5.0,
+        params={
+            "target_width": 0.145,
+            "asset_cfg": SceneEntityCfg(
+                "robot",
+                body_names=["left_ankle_roll_link", "right_ankle_roll_link"],
+                preserve_order=True,
+            ),
+        },
     )
 
 

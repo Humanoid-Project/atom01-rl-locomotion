@@ -11,9 +11,9 @@ from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, R
 @configclass
 class PPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24 # 환경당 데이터 수집 step 수
-    max_iterations = 5000 # 총 학습 반복 횟수
-    save_interval = 100 # 모델 체크포인트 저장 주기 (iteration 단위)
-    experiment_name = "atom01_test"
+    max_iterations = 4000 # 총 학습 반복 횟수
+    save_interval = 500 # 모델 체크포인트 저장 주기 (iteration 단위)
+    experiment_name = "atom01_standing_real"
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0, # 초기 탐색 노이즈 크기 (학습 진행에 따라 감소)
         actor_obs_normalization=True, # 입력 observation 정규화 여부 (단위가 다른 값이 섞이면 True 권장)
