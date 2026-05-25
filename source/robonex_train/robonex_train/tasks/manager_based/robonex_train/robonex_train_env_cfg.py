@@ -189,7 +189,7 @@ class EventCfg:
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
-            "stiffness_distribution_params": (0.8, 1.2),
+            "stiffness_distribution_params": (0.9, 1.1),
             "damping_distribution_params": (0.8, 1.2),
             "operation": "scale",
         },
@@ -251,7 +251,7 @@ class EventCfg:
             "num_buckets": 64,
         },
     )
-    '''
+    
     # 관절 마찰 랜덤화
     randomize_joint_friction = EventTerm(
         func=mdp.randomize_joint_parameters,
@@ -263,7 +263,7 @@ class EventCfg:
             "distribution": "uniform",
         },
     )
-    '''
+    
     # 질량 랜덤화
     randomize_mass = EventTerm(
         func=mdp.randomize_rigid_body_mass,
