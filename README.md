@@ -16,3 +16,6 @@ Reinforcement learning training for the **atom01** humanoid robot using Isaac La
 ### Static Balance 2 — With domain randomization
 
 [![YouTube](https://img.shields.io/badge/YouTube-FF0000?logo=youtube&logoColor=white&style=flat)](https://youtu.be/sYlgWWmgBX4?si=HYW7lW1rjlMPkpN5)
+
+### Static Balance 3 — Sim-to-Real
+[![YouTube](https://img.shields.io/badge/YouTube-FF0000?logo=youtube&logoColor=white&style=flat)](https://youtu.be/SoVbPxoebfA?si=peWILezvbEhD3TS_)

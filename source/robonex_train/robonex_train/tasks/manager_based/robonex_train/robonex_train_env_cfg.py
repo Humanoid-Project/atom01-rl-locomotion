@@ -153,7 +153,7 @@ class ObservationsCfg:
         # 관절 속도
         joint_vel_rel = ObsTerm(
             func=mdp.joint_vel_rel,
-            noise=GaussianNoiseCfg(mean=0.0, std=0.0),
+            noise=GaussianNoiseCfg(mean=0.0, std=0.03),
         )
 
         # IMU 각속도
@@ -167,7 +167,10 @@ class ObservationsCfg:
         )
 
         # 중력 방향
-        projected_gravity = ObsTerm(func=mdp.projected_gravity)
+        projected_gravity = ObsTerm(
+            func=mdp.projected_gravity,
+            noise=GaussianNoiseCfg(mean=0.0, std=0.01),
+        )
 
         # 이전 Action
         actions = ObsTerm(func=mdp.last_action)

@@ -11,9 +11,7 @@ import torch
 
 from isaaclab.assets import Articulation
 from isaaclab.managers import SceneEntityCfg
-from isaaclab.utils.math import wrap_to_pi
-from isaaclab.utils.math import quat_apply_inverse, wrap_to_pi
-
+from isaaclab.utils.math import wrap_to_pi, quat_apply_inverse
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
@@ -21,11 +19,8 @@ if TYPE_CHECKING:
 
 def joint_pos_target_l2(env: ManagerBasedRLEnv, target: float, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     """Penalize joint position deviation from a target value."""
-    # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
-    # wrap the joint positions to (-pi, pi)
     joint_pos = wrap_to_pi(asset.data.joint_pos[:, asset_cfg.joint_ids])
-    # compute the reward
     return torch.sum(torch.square(joint_pos - target), dim=1)
 
 def ang_vel_z_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
@@ -37,6 +32,7 @@ def base_lin_vel_xy_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = Scene
     """Penalize x/y base linear velocity."""
     asset: Articulation = env.scene[asset_cfg.name]
     return torch.sum(torch.square(asset.data.root_lin_vel_b[:, :2]), dim=1)
+
 
 
 def _body_pos_b(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
@@ -55,20 +51,17 @@ def _body_pos_b(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tens
     )
     return body_pos_b.reshape(env.num_envs, num_bodies, 3)
 
-
 def feet_width_l2(env: ManagerBasedRLEnv, target_width: float, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     """Penalize feet width deviation from target width."""
     feet_pos_b = _body_pos_b(env, asset_cfg)
     foot_width = torch.abs(feet_pos_b[:, 0, 1] - feet_pos_b[:, 1, 1])
     return torch.square(foot_width - target_width)
 
-
 def feet_centered_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     """Penalize feet midpoint y offset from base center."""
     feet_pos_b = _body_pos_b(env, asset_cfg)
     feet_mid_y = 0.5 * (feet_pos_b[:, 0, 1] + feet_pos_b[:, 1, 1])
     return torch.square(feet_mid_y)
-
 
 def feet_x_align_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     """Penalize one foot being ahead of the other."""
