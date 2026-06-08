@@ -13,11 +13,11 @@ from . import agents
 
 
 gym.register(
-    id="Template-Robonex-Train-v0",
+    id="Atom01-Standing",
     entry_point="isaaclab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,
     kwargs={
-        "env_cfg_entry_point": f"{__name__}.robonex_train_env_cfg:RobonexTrainEnvCfg",
+        "env_cfg_entry_point": f"{__name__}.atom01_standing_env_cfg:Atom01StandingEnvCfg",
         "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:PPORunnerCfg",
     },
 )

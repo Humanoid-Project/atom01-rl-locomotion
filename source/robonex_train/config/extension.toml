@@ -23,7 +23,7 @@ keywords = ["extension", "template", "isaaclab"]
 # NOTE: Add additional dependencies here
 
 [[python.module]]
-name = "robonex_train"
+name = "atom01_standing"
 
 [isaac_lab_settings]
 # TODO: Uncomment and list any apt dependencies here.

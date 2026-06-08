@@ -42,7 +42,7 @@ LEG_JOINTS = [
 
 
 @configclass
-class RobonexTrainSceneCfg(InteractiveSceneCfg):
+class Atom01StandingSceneCfg(InteractiveSceneCfg):
     """Configuration for an Atom01 training scene."""
 
     # ground 설정
@@ -55,7 +55,7 @@ class RobonexTrainSceneCfg(InteractiveSceneCfg):
     robot: ArticulationCfg = ArticulationCfg(
         prim_path="{ENV_REGEX_NS}/Robot",
         spawn=sim_utils.UsdFileCfg(
-            usd_path="/home/polygon/robonex_ws/atom01_description/usd/atom01.usd",
+            usd_path="/home/polygon/01_robonex_project/atom01-rl/atom01_description/usd/atom01.usd",
             activate_contact_sensors=True, # 접촉센서 쓰려면 추가해야 함
         ),
         init_state=ArticulationCfg.InitialStateCfg(
@@ -377,8 +377,8 @@ class TerminationsCfg:
 
 
 @configclass
-class RobonexTrainEnvCfg(ManagerBasedRLEnvCfg):
-    scene: RobonexTrainSceneCfg = RobonexTrainSceneCfg(
+class Atom01StandingEnvCfg(ManagerBasedRLEnvCfg):
+    scene: Atom01StandingSceneCfg = Atom01StandingSceneCfg(
         num_envs=4096, # 동시에 실행할 로봇 수
         env_spacing=4.0, # 각 로봇 사이 간격(m)
     )
