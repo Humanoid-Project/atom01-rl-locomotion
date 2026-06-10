@@ -352,7 +352,7 @@ class RewardsCfg:
     )
 
     track_lin_vel_xy = RewTerm(
-        func=loco_rewards.track_lin_vel_xy_exp,
+        func=loco_rewards.track_lin_vel_xy_yaw_frame_exp,
         weight=2.0,
         params={
             "command_name": "base_velocity",
@@ -360,7 +360,7 @@ class RewardsCfg:
         },
     )
     track_ang_vel_z = RewTerm(
-        func=loco_rewards.track_ang_vel_z_exp,
+        func=loco_rewards.track_ang_vel_z_world_exp,
         weight=1.0,
         params={
             "command_name": "base_velocity",
