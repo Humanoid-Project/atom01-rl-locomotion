@@ -51,6 +51,7 @@ class CommandsCfg:
         rel_standing_envs=0.1, # 정지 명령 비율
         rel_heading_envs=0.0, # 방향전환 명령 비율
         heading_command=False, # 방향전환 명령 사용할지 여부
+        debug_vis=True,
         ranges=UniformVelocityCommandCfg.Ranges(
             lin_vel_x=(-0.5, 0.5), # 전후 속도 범위
             lin_vel_y=(-0.2, 0.2), # 좌우 속도 범위
@@ -115,7 +116,7 @@ class Atom01WalkingSceneCfg(InteractiveSceneCfg):
     contact_forces = ContactSensorCfg(
         prim_path="{ENV_REGEX_NS}/Robot/.*",
         history_length=3,
-        track_air_time=False,
+        track_air_time=True, # 발이 공중에 떠있는 시간 추적 여부
     )
 
     # IMU
@@ -142,11 +143,11 @@ class ActionsCfg:
         asset_name="robot",
         joint_names=LEG_JOINTS,
         scale={
-            ".*yaw.*": 0.08,
-            ".*roll.*": 0.08,
-            ".*thigh_pitch.*": 0.20,
-            ".*knee.*": 0.25,
-            ".*ankle_pitch.*": 0.15,
+            ".*yaw.*": 0.1,
+            ".*roll.*": 0.1,
+            ".*thigh_pitch.*": 0.4,
+            ".*knee.*": 0.4,
+            ".*ankle_pitch.*": 0.25,
         },
         use_default_offset=True, # 절대 관절각이 아닌 기본 자세에서의 변화량 사용
     )
@@ -321,7 +322,7 @@ class RewardsCfg:
     # 몸통 기울기 페널티
     flat_orientation = RewTerm(
         func=mdp.flat_orientation_l2,
-        weight=-1.0,
+        weight=-2.0,
     )
 
     # 수직 방향 흔들림 억제
@@ -365,6 +366,53 @@ class RewardsCfg:
         params={
             "command_name": "base_velocity",
             "std": 0.25,
+        },
+    )
+
+    stand_still = RewTerm(
+        func=loco_rewards.stand_still_joint_deviation_l1,
+        weight=-0.5,
+        params={
+            "command_name": "base_velocity",
+            "asset_cfg": SceneEntityCfg("robot", joint_names=LEG_JOINTS),
+        },
+    )
+
+    feet_air_time = RewTerm(
+        func=loco_rewards.feet_air_time_positive_biped,
+        weight=0.7,
+        params={
+            "command_name": "base_velocity",
+            "threshold": 0.4,
+            "sensor_cfg": SceneEntityCfg(
+                "contact_forces",
+                body_names=["left_ankle_roll_link", "right_ankle_roll_link"],
+            ),
+        },
+    )
+
+    hip_roll_yaw_deviation = RewTerm(
+        func=mdp.joint_deviation_l1,
+        weight=-1.0,
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=[
+                ".*thigh_roll.*", ".*thigh_yaw.*", ".*ankle_roll.*"
+            ]),
+        },
+    )
+
+    feet_slide = RewTerm(
+        func=loco_rewards.feet_slide,
+        weight=-0.1,
+        params={
+            "sensor_cfg": SceneEntityCfg(
+                "contact_forces",
+                body_names=["left_ankle_roll_link", "right_ankle_roll_link"],
+            ),
+            "asset_cfg": SceneEntityCfg(
+                "robot",
+                body_names=["left_ankle_roll_link", "right_ankle_roll_link"],
+            ),
         },
     )
 
