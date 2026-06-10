@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Installation script for the 'atom01_standing' python package."""
+"""Installation script for the 'atom01_rl_locomotion' python package."""
 
 import os
 
@@ -23,7 +23,7 @@ INSTALL_REQUIRES = [
 
 # Installation operation
 setup(
-    name="atom01_standing",
+    name="atom01_rl_locomotion",
     packages=find_packages(),
     author=EXTENSION_TOML_DATA["package"]["author"],
     maintainer=EXTENSION_TOML_DATA["package"]["maintainer"],
