@@ -55,12 +55,12 @@ class Atom01StandingSceneCfg(InteractiveSceneCfg):
     robot: ArticulationCfg = ArticulationCfg(
         prim_path="{ENV_REGEX_NS}/Robot",
         spawn=sim_utils.UsdFileCfg(
-            usd_path="/home/polygon/01_robonex_project/atom01-rl/atom01_description/usd/atom01.usd",
+            usd_path="/home/polygon/humanoid_project/atom01-rl/atom01_description/usd/atom01.usd",
             activate_contact_sensors=True, # 접촉센서 쓰려면 추가해야 함
         ),
         init_state=ArticulationCfg.InitialStateCfg(
             pos=(0.0, 0.0, 0.72),  # 바닥 위 0.72m에서 시작
-            
+
             # 기본 자세 정의
             joint_pos={
                 "left_thigh_yaw_joint": 0.0,
@@ -186,7 +186,7 @@ class ObservationsCfg:
 class EventCfg:
     """Configuration for events."""
 
-    # 엑추에이터 gain 
+    # 엑추에이터 gain
     randomize_actuator_gains = EventTerm(
         func=mdp.randomize_actuator_gains,
         mode="reset",
@@ -227,7 +227,7 @@ class EventCfg:
             "velocity_range": (-0.02, 0.02),
         },
     )
-    
+
     # 외부 충격
     push_robot = EventTerm(
         func=mdp.push_by_setting_velocity,
@@ -241,7 +241,7 @@ class EventCfg:
             },
         },
     )
-    
+
     # 마찰 랜덤화
     randomize_friction = EventTerm(
         func=mdp.randomize_rigid_body_material,
@@ -254,7 +254,7 @@ class EventCfg:
             "num_buckets": 64,
         },
     )
-    
+
     # 관절 마찰 랜덤화
     randomize_joint_friction = EventTerm(
         func=mdp.randomize_joint_parameters,
@@ -266,7 +266,7 @@ class EventCfg:
             "distribution": "uniform",
         },
     )
-    
+
     # 질량 랜덤화
     randomize_mass = EventTerm(
         func=mdp.randomize_rigid_body_mass,
@@ -322,7 +322,7 @@ class RewardsCfg:
             "target_height": 0.72,
         },
     )
-    
+
     # 다리 관절이 기본자세에서 벗어나면 페널티
     joint_deviation = RewTerm(
         func=mdp.joint_deviation_l1,

@@ -73,7 +73,7 @@ class Atom01WalkingSceneCfg(InteractiveSceneCfg):
     robot: ArticulationCfg = ArticulationCfg(
         prim_path="{ENV_REGEX_NS}/Robot",
         spawn=sim_utils.UsdFileCfg(
-            usd_path="/home/polygon/01_robonex_project/atom01-rl/atom01_description/usd/atom01.usd",
+            usd_path="/home/polygon/humanoid_project/atom01-rl/atom01_description/usd/atom01.usd",
             activate_contact_sensors=True, # 접촉센서 쓰려면 추가해야 함
         ),
         init_state=ArticulationCfg.InitialStateCfg(
@@ -414,6 +414,12 @@ class RewardsCfg:
                 body_names=["left_ankle_roll_link", "right_ankle_roll_link"],
             ),
         },
+    )
+
+    # 관절 가속도 억제
+    dof_acc = RewTerm(
+        func=mdp.joint_acc_l2,
+        weight=-2.5e-7,
     )
 
 
